@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WPAGIS Conference Mailer</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --navy: #0e2a47; --on-navy: #fff; --accent: #d4771f; --line: #d9dee6; --muted: #5d6878; --bg: #e9ecf1;
+  --ok: #1a7f4b; --okbg: #e6f4ea; --bad: #b3261e; --badbg: #fce8e6; --warn: #8a5a00; --warnbg: #fff4dc; --gray: #5d6878; --graybg: #eceff3 }
+* { box-sizing: border-box }
+html, body { margin: 0; padding: 0 }
+body { font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: #14202e; background: var(--bg); font-size: 14px }
+button, input, select, textarea { font: inherit }
+a { color: var(--navy) }
+
+/* ---------- top bar ---------- */
+.bar { position: sticky; top: 0; z-index: 20; background: var(--navy); color: var(--on-navy); padding: 10px 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center }
+.bar b { font-size: 16px; margin-right: 6px; white-space: nowrap }
+.bar button { border: 0; border-radius: 6px; padding: 7px 14px; cursor: pointer; background: #fff; color: var(--navy); font-weight: 600 }
+.bar button.alt { background: var(--accent); color: #fff }
+.bar .st { opacity: .85; font-size: 13px; margin-left: auto }
+.tabs { display: flex; gap: 4px; background: #fff; border-bottom: 1px solid var(--line); padding: 0 20px; overflow-x: auto }
+.tabs button { border: 0; background: none; padding: 12px 14px; cursor: pointer; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; white-space: nowrap }
+.tabs button.on { color: var(--navy); border-bottom-color: var(--accent) }
+.tabs .count { font-weight: 500; font-size: 12px; background: var(--graybg); border-radius: 99px; padding: 1px 7px; margin-left: 4px }
+
+.panel { display: none; background: #fff; border-bottom: 1px solid var(--line); padding: 14px 20px 18px; font-size: 13px }
+.panel.open { display: block }
+.panel h3, .card h3 { font-size: 14px; margin: 0 0 10px; color: var(--navy) }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px 18px }
+label.f { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px }
+label.f.wide { grid-column: 1 / -1 }
+input[type=text], input[type=url], input[type=password], input[type=email], input[type=number], input[type=search], select, textarea {
+  font-weight: 400; padding: 6px 8px; border: 1px solid #c9ced8; border-radius: 6px; background: #fff; min-width: 0 }
+textarea { min-height: 70px; resize: vertical }
+.note { font-weight: 400; color: var(--muted); font-size: 12px }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px }
+.btn { border: 1px solid #c9ced8; background: #f6f7f9; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 500; color: #14202e }
+.btn.primary { background: var(--navy); border-color: var(--navy); color: #fff }
+.btn.accent { background: var(--accent); border-color: var(--accent); color: #fff }
+.btn.danger { color: var(--bad); border-color: #e9b5b0; background: #fff }
+.btn.confirm { background: var(--bad); border-color: var(--bad); color: #fff }
+.btn:disabled { opacity: .5; cursor: default }
+
+.msg { display: none; margin: 12px 20px 0; padding: 10px 14px; border-radius: 8px; font-size: 13px; white-space: pre-line }
+.msg.show { display: block }
+.msg.ok { background: var(--okbg); color: var(--ok) }
+.msg.err { background: var(--badbg); color: var(--bad) }
+.msg.info { background: #e8f0fe; color: #174ea6 }
+
+.view { display: none; padding: 0 20px 30px }
+.view.on { display: block }
+.card { background: #fff; margin: 16px 0 0; border-radius: 10px; border: 1px solid var(--line); padding: 14px 16px }
+.filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; font-size: 13px }
+.filters label { display: flex; flex-direction: column; gap: 3px; font-weight: 600 }
+.count-line { font-size: 13px; color: var(--muted); margin-left: auto }
+.bulk { display: none; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding: 8px 10px; background: #fff8ee; border: 1px solid #f0d9bd; border-radius: 8px; font-size: 13px }
+.bulk.show { display: flex }
+
+.tablewrap { max-height: calc(100vh - 290px); min-height: 240px; overflow: auto; margin-top: 12px; border: 1px solid #e3e7ee; border-radius: 8px }
+table { width: 100%; border-collapse: collapse; font-size: 13px }
+th { position: sticky; top: 0; background: #f3f5f8; text-align: left; padding: 7px 8px; font-weight: 600; border-bottom: 1px solid #dfe3ea; cursor: pointer; white-space: nowrap; z-index: 1 }
+td { padding: 6px 8px; border-bottom: 1px solid #eef0f4; vertical-align: top }
+tbody tr { cursor: pointer }
+tbody tr:hover td { background: #fafbfc }
+td.cb, th.cb { width: 30px; cursor: default }
+.chip { display: inline-block; font-size: 11px; font-weight: 600; border-radius: 99px; padding: 1px 8px; margin: 1px 3px 1px 0; background: var(--graybg); color: #3d4757; white-space: nowrap }
+.chip.test { background: #fde7d0; color: #8a4510 }
+.st-Active { background: var(--okbg); color: var(--ok) }
+.st-Unsubscribed { background: var(--graybg); color: var(--gray) }
+.st-Bounced { background: var(--badbg); color: var(--bad) }
+.st-Invalid { background: var(--warnbg); color: var(--warn) }
+.st-Sent { background: var(--okbg); color: var(--ok) }
+.st-Failed { background: var(--badbg); color: var(--bad) }
+.more { text-align: center; padding: 10px }
+.empty { padding: 30px; color: var(--muted); text-align: center }
+
+/* compose */
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr } }
+.lists { max-height: 260px; overflow-y: auto; border: 1px solid #eef0f4; border-radius: 8px; padding: 6px 10px; margin-top: 6px }
+.lists label { display: flex; gap: 8px; align-items: center; padding: 3px 0; cursor: pointer; font-weight: 400 }
+.kpis { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px }
+.kpi { background: #f6f8fa; border-radius: 8px; padding: 8px 12px; min-width: 120px }
+.kpi b { display: block; font-size: 20px; color: var(--navy) }
+.kpi span { font-size: 12px; color: var(--muted) }
+.progress { height: 8px; background: #eceff3; border-radius: 4px; overflow: hidden; margin: 8px 0 }
+.progress > div { height: 100%; background: var(--accent); width: 0 }
+
+.steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px }
+.steps span { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--graybg); color: var(--muted) }
+.steps span.on { background: var(--navy); color: #fff }
+.mapgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px 18px; margin-top: 10px }
+.mapgrid label { display: flex; flex-direction: column; gap: 3px; font-weight: 600; font-size: 13px }
+.mapgrid .ex { font-weight: 400; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.notecols { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 13px }
+.notecols label { display: flex; gap: 6px; align-items: center; font-weight: 400 }
+.ptabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px }
+.ptabs button { border: 1px solid #c9ced8; background: #fff; border-radius: 99px; padding: 5px 12px; cursor: pointer; font-weight: 600; font-size: 13px }
+.ptabs button.on { background: var(--navy); border-color: var(--navy); color: #fff }
+td .old { color: var(--muted); font-size: 12px }
+td select { max-width: 260px }
+.fillchip { display: inline-block; font-size: 11px; background: #e8f0fe; color: #174ea6; border-radius: 99px; padding: 1px 7px; margin: 1px 3px 1px 0 }
+
+/* modal */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(14, 42, 71, .45); z-index: 50; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto }
+.modal-bg.show { display: flex }
+.modal { background: #fff; border-radius: 12px; width: min(760px, 100%); padding: 18px 20px; box-shadow: 0 10px 40px rgba(0,0,0,.25) }
+.modal h3 { margin: 0 0 12px; color: var(--navy) }
+.ro { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; font-size: 12px; margin-top: 8px }
+.ro div b { display: block; color: var(--muted); font-weight: 600 }
+details { margin-top: 14px }
+summary { cursor: pointer; font-weight: 600; color: var(--navy) }
+/* guide */
+.guide { width: min(860px, 100%) }
+.guide .ghead { display: flex; align-items: center; gap: 10px; margin-bottom: 6px }
+.guide .ghead h3 { margin: 0; flex: 1 }
+.guide .toc { background: #f6f8fa; border-radius: 8px; padding: 10px 14px; margin: 8px 0 12px; font-size: 13px }
+.guide .toc ol { margin: 6px 0 0; padding-left: 20px; columns: 2; column-gap: 28px }
+.guide .toc a { cursor: pointer }
+.guide details { border: 1px solid var(--line); border-radius: 8px; padding: 0 14px; margin: 8px 0 0 }
+.guide details[open] { padding-bottom: 10px }
+.guide summary { padding: 10px 0; font-size: 14px }
+.guide p, .guide li { font-size: 13px; line-height: 1.55 }
+.guide table { margin: 8px 0 }
+.guide code { background: #f1f3f4; padding: 0 4px; border-radius: 4px; font-size: 12px }
+@media (max-width: 640px) { .guide .toc ol { columns: 1 } }
+
+@media (max-width: 640px) {
+  .bar, .tabs { padding-left: 16px; padding-right: 16px }
+  .view { padding: 0 16px 24px }
+  .bar .st { margin-left: 0; width: 100% }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <b>WPAGIS · Conference Mailer</b>
+  <button type="button" id="bReload">Reload data</button>
+  <button type="button" id="bConn">Connection</button>
+  <button type="button" id="bGuide" title="How to use this page">Guide</button>
+  <button type="button" class="alt" id="bSheet" title="Open the Google Sheet behind this page">Open sheet</button>
+  <span class="st" id="status">Not connected.</span>
+</div>
+
+<div class="panel" id="connPanel">
+  <h3>Connect to the mailer</h3>
+  <div class="sgrid">
+    <label class="f wide" id="cUrlL" style="display:none">Web app URL (Apps Script &gt; Deploy &gt; Web app — ends in /exec; leave blank to use the built-in address)
+      <input type="url" id="cUrl" placeholder="https://script.google.com/macros/s/…/exec"></label>
+    <label class="f">Access key<input type="password" id="cKey" autocomplete="current-password"></label>
+    <label class="f" style="flex-direction:row;align-items:center;gap:8px;font-weight:500;padding-top:22px">
+      <input type="checkbox" id="cRemember"> Remember the key in this browser</label>
+  </div>
+  <div class="row">
+    <button type="button" class="btn primary" id="cConnect">Connect</button>
+    <button type="button" class="btn" id="cForget">Forget saved key</button>
+    <button type="button" class="btn" id="cUrlToggle">Change web app address</button>
+    <span class="note">The web app address is built into this page; change it only if the script is redeployed under a new address. The key is set in the Google Sheet (Conference Mailer menu &gt; Set web page access key). Without "Remember", it is kept only until this tab is closed.</span>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button type="button" data-v="contacts" class="on">Contacts <span class="count" id="tcContacts">0</span></button>
+  <button type="button" data-v="send">Compose &amp; send</button>
+  <button type="button" data-v="import">Import a list</button>
+  <button type="button" data-v="log">Send log <span class="count" id="tcLog">0</span></button>
+  <button type="button" data-v="settings">Settings &amp; tools</button>
+</div>
+
+<div class="msg" id="msg"></div>
+
+<!-- ================= CONTACTS ================= -->
+<section class="view on" id="v-contacts">
+  <div class="card">
+    <div class="filters">
+      <label>Search<input type="search" id="fQ" placeholder="Name, email or affiliation"></label>
+      <label>Status<select id="fStatus"><option value="">Any</option><option>Active</option><option>Unsubscribed</option><option>Bounced</option><option>Invalid</option></select></label>
+      <label>List / tag<select id="fList"><option value="">Any</option></select></label>
+      <label id="lRole">Role<select id="fRole"><option value="">Any</option></select></label>
+      <label id="lYear">Last took part<select id="fYear"><option value="">Any year</option></select></label>
+      <div class="row" style="margin:0">
+        <button type="button" class="btn" id="fClear">Clear filters</button>
+        <button type="button" class="btn" id="bAdd">+ Add contact</button>
+        <button type="button" class="btn" id="bExport">Export shown (CSV)</button>
+      </div>
+      <span class="count-line" id="cCount"></span>
+    </div>
+    <div class="bulk" id="bulk">
+      <b id="bulkN">0 selected</b>
+      <select id="bulkStatus"><option value="">Set status…</option><option>Active</option><option>Unsubscribed</option><option>Bounced</option><option>Invalid</option></select>
+      <input type="text" id="bulkTag" placeholder="Tag, e.g. Test" style="width:150px">
+      <button type="button" class="btn" id="bulkAddTag">Add tag</button>
+      <button type="button" class="btn" id="bulkRemTag">Remove tag</button>
+      <button type="button" class="btn" id="bulkClear">Clear selection</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr id="cHead"></tr></thead>
+      <tbody id="cBody"><tr><td class="empty">Connect to load the contacts.</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================= COMPOSE & SEND ================= -->
+<section class="view" id="v-send">
+  <div class="grid2">
+    <div class="card">
+      <h3>1. Pick the email</h3>
+      <div class="note">Write the invitation as a Gmail draft in the conference account. Personal fields: <code>{{FirstName}}</code>, <code>{{Affiliation}}</code>, or <code>{{FirstName|Colleague}}</code> for a fallback. Any column name works.</div>
+      <div class="row"><select id="sDraft" style="flex:1"><option value="">Connect to load drafts</option></select>
+        <button type="button" class="btn" id="sDraftsReload" title="Reload drafts">↻</button></div>
+
+      <h3 style="margin-top:18px">2. Pick who gets it</h3>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="sAll" checked> All active contacts</label>
+      <div class="lists" id="sLists"><span class="note">No lists yet.</span></div>
+
+      <h3 style="margin-top:18px">3. Name it and send</h3>
+      <input type="text" id="sName" placeholder="Campaign name, e.g. 2027 Call for Presentations" style="width:100%">
+      <div class="note" style="margin-top:4px">Using the same campaign name again later sends only to contacts who haven't received it yet.</div>
+      <div class="row">
+        <button type="button" class="btn" id="sTest">Send me a test</button>
+        <button type="button" class="btn accent" id="sStart">Start sending</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Recipients &amp; status</h3>
+      <div class="kpis">
+        <div class="kpi"><b id="kRecip">–</b><span>recipients selected</span></div>
+        <div class="kpi"><b id="kQuota">–</b><span>Gmail quota left today</span></div>
+      </div>
+      <h3 style="margin-top:18px">Current campaign</h3>
+      <div id="sStatus" class="note">Nothing sending right now.</div>
+      <div class="row"><button type="button" class="btn danger" id="sStop" style="display:none">Stop sending</button>
+        <button type="button" class="btn" id="sRefresh">Refresh status</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= IMPORT ================= -->
+<section class="view" id="v-import">
+  <div class="card">
+    <div class="steps" id="iSteps"><span class="on">1 · File &amp; source</span><span>2 · Match columns</span><span>3 · Review &amp; duplicates</span><span>4 · Import</span></div>
+    <div class="sgrid" style="margin-top:12px">
+      <label class="f">List file (CSV or Excel)<input type="file" id="iFile" accept=".csv,.xlsx,.xls,.txt"></label>
+      <label class="f" id="iSheetL" style="display:none">Sheet<select id="iSheet"></select></label>
+      <label class="f">Source of this list <span class="note">(required — e.g. "CCAP members 2026", "Outlook contacts")</span><input type="text" id="iSource"></label>
+      <label class="f">Tag to add to every imported contact<input type="text" id="iTag" placeholder="defaults to the source name"></label>
+    </div>
+    <div class="note" id="iFileNote" style="margin-top:8px">Nothing is written to the contact list until you press Import in step 4.</div>
+  </div>
+
+  <div class="card" id="iMapCard" style="display:none">
+    <h3>2. Match the file's columns to the contact list</h3>
+    <div class="note">Matched automatically from the column headings (Outlook exports are recognized). Change any that are wrong. If the file has one "Name" column instead of first/last names, use <b>Full name</b>.</div>
+    <div class="mapgrid" id="iMap"></div>
+    <h3 style="margin-top:16px">Other columns to keep in Notes</h3>
+    <div class="note">Columns with no matching field (job title, county, membership type…). Ticked ones are added to the contact's Notes as "Column: value".</div>
+    <div class="notecols" id="iNoteCols"></div>
+    <div class="row"><button type="button" class="btn primary" id="iCheck">Check against the contact list</button></div>
+  </div>
+
+  <div class="card" id="iPrevCard" style="display:none">
+    <h3>3. Review</h3>
+    <div class="kpis" id="iKpis"></div>
+    <div class="ptabs" id="iPtabs"></div>
+    <div class="row" id="iBulkRow" style="margin-top:8px"></div>
+    <div class="tablewrap" style="max-height:calc(100vh - 360px)"><table><thead id="iHead"></thead><tbody id="iBody"></tbody></table></div>
+    <h3 style="margin-top:16px">4. Import</h3>
+    <div class="note">New contacts are added as Active with the tag and source above. Existing contacts only get <b>empty</b> fields filled in, plus the tag and source; their status is never changed, so unsubscribed and bounced contacts stay that way.</div>
+    <div class="row"><button type="button" class="btn accent" id="iGo">Import</button><span class="note" id="iGoNote"></span></div>
+  </div>
+</section>
+
+<!-- ================= SEND LOG ================= -->
+<section class="view" id="v-log">
+  <div class="card">
+    <div class="filters">
+      <label>Campaign<select id="lCamp"><option value="">All campaigns</option></select></label>
+      <label>Result<select id="lRes"><option value="">Any</option><option>Sent</option><option>Failed</option></select></label>
+      <label>Search<input type="search" id="lQ" placeholder="Email"></label>
+      <button type="button" class="btn" id="lReload">Reload log</button>
+      <span class="count-line" id="lCount"></span>
+    </div>
+    <div class="kpis" id="lKpis"></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Time</th><th>Campaign</th><th>Email</th><th>Result</th><th>Detail</th></tr></thead>
+      <tbody id="lBody"><tr><td colspan="5" class="empty">Nothing sent yet.</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================= SETTINGS & TOOLS ================= -->
+<section class="view" id="v-settings">
+  <div class="grid2">
+    <div class="card">
+      <h3>Mailer settings</h3>
+      <div class="sgrid">
+        <label class="f">Sender name<input type="text" id="setSenderName"></label>
+        <label class="f">Reply-to address<input type="email" id="setReplyTo" placeholder="blank = the conference account"></label>
+        <label class="f">Emails per batch (1–100)<input type="number" id="setBatchSize" min="1" max="100"></label>
+        <label class="f">Pause between emails (ms)<input type="number" id="setPauseMs" min="0" step="50"></label>
+        <label class="f wide">Footer added to every email (HTML allowed; <code>{{UnsubscribeLink}}</code> becomes the unsubscribe link)
+          <textarea id="setFooter"></textarea></label>
+      </div>
+      <div class="row"><button type="button" class="btn primary" id="setSave">Save settings</button></div>
+    </div>
+    <div class="card">
+      <h3>List upkeep</h3>
+      <div class="note">Run before each mailing. It reads UNSUBSCRIBE replies and undeliverable notices for addresses this mailer has sent to, and updates their status. Each message is handled only once.</div>
+      <div class="row"><button type="button" class="btn" id="tReplies">Process unsubscribes &amp; bounces</button></div>
+      <div class="note" style="margin-top:16px">Merges duplicate rows (same email), trims addresses and marks invalid ones. It rewrites the Contacts tab, so use it after pasting in new contacts.</div>
+      <div class="row"><button type="button" class="btn" id="tClean">Clean &amp; de-duplicate contacts</button></div>
+      <h3 style="margin-top:20px">About this page</h3>
+      <div class="note" id="aboutLine">Not connected.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<div class="modal-bg" id="guideBg">
+  <div class="modal guide" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+    <div class="ghead"><h3 id="gTitle">Conference Mailer guide</h3>
+      <button type="button" class="btn" id="gExpand">Open all</button>
+      <button type="button" class="btn primary" id="gClose">Close</button></div>
+    <div class="toc"><b>Contents</b>
+      <ol>
+        <li><a data-g="g-what">What the mailer is</a></li>
+        <li><a data-g="g-connect">Connect the page</a></li>
+        <li><a data-g="g-contacts">Find &amp; fix contacts</a></li>
+        <li><a data-g="g-send">Send a mailing</a></li>
+        <li><a data-g="g-log">Check the send log</a></li>
+        <li><a data-g="g-import">Import a list</a></li>
+        <li><a data-g="g-habits">Habits &amp; quick fixes</a></li>
+        <li><a data-g="g-maint">For the maintainer</a></li>
+      </ol></div>
+
+    <details id="g-what"><summary>1 · What the mailer is</summary>
+      <p>The Conference Mailer sends personalized email invitations to the conference contact list, one separate email per person, from the conference Gmail account (info@westernpagis.com). From this page you find and edit contacts, send a mailing, and check what went out. No spreadsheet or mail merge is needed.</p>
+      <p>Behind the page sits the Google Sheet <b>WPA GIS Conference Contacts</b>, owned by the conference account. It is the master copy; you never have to open it for everyday work (<b>Open sheet</b> at the top opens it if you need to).</p>
+    </details>
+
+    <details id="g-connect"><summary>2 · Connect the page (once per browser)</summary>
+      <ol>
+        <li>Click <b>Connection</b> at the top, if the Connection box isn't already open.</li>
+        <li>Type the <b>access key</b> (the conference chair gives it to committee members).</li>
+        <li>Tick <b>Remember the key in this browser</b> on your own computer, then click <b>Connect</b>. The contacts load after a few seconds.</li>
+      </ol>
+      <p>On a shared computer leave <b>Remember</b> unticked; the key is forgotten when you close the tab. <b>Forget saved key</b> removes it at any time. The web app address is built into the page; use <b>Change web app address</b> only if the script is ever redeployed under a new address (leave the field blank to return to the built-in one).</p>
+      <p>The access key gives full access to every contact. Keep it within the committee.</p>
+    </details>
+
+    <details id="g-contacts"><summary>3 · Find &amp; fix contacts</summary>
+      <ol>
+        <li>On <b>Contacts</b>, type a name, email or organization in <b>Search</b>, or narrow the list with <b>Status</b>, <b>List / tag</b>, <b>Role</b> and <b>Last took part</b>.</li>
+        <li>Click a row to open it, change what you need, and click <b>Save</b>.</li>
+        <li>To add someone, click <b>+ Add contact</b>. Only the email is required.</li>
+      </ol>
+      <p>To change many people at once, tick their rows and use <b>Add tag</b>, <b>Remove tag</b> or <b>Set status</b> in the bar that appears. <b>Export shown (CSV)</b> downloads exactly the rows on screen.</p>
+      <table><thead><tr><th>Status</th><th>Gets email?</th><th>Set by</th></tr></thead><tbody>
+        <tr><td>Active</td><td>Yes</td><td>Default for every contact</td></tr>
+        <tr><td>Unsubscribed</td><td>No</td><td>The person clicked "unsubscribe"</td></tr>
+        <tr><td>Bounced</td><td>No</td><td>The address came back undeliverable</td></tr>
+        <tr><td>Invalid</td><td>No</td><td>The address is malformed or known to be dead</td></tr></tbody></table>
+      <p>Never set someone back to <b>Active</b> after they unsubscribed unless they ask you to.</p>
+    </details>
+
+    <details id="g-send"><summary>4 · Send a mailing</summary>
+      <ol>
+        <li><b>Write the email as a draft in the conference Gmail account.</b> Logos, formatting and attachments carry over. Personalize with <code>{{FirstName}}</code> or <code>{{FirstName|Colleague}}</code> (the word after the bar is used when the name is blank); <code>{{Affiliation}}</code> and any other column name work too, in the subject as well.</li>
+        <li>On <b>Settings &amp; tools</b>, click <b>Process unsubscribes &amp; bounces</b> so last mailing's opt-outs are skipped.</li>
+        <li>On <b>Compose &amp; send</b>, pick the draft and tick the lists or tags to send to (or all active contacts). The recipient count and today's quota appear.</li>
+        <li>Click <b>Send me a test</b> and check it in your inbox.</li>
+        <li>Type a <b>Campaign</b> name (e.g. <code>2027 Call for Presentations</code>), click <b>Start sending</b>, and click again to confirm.</li>
+      </ol>
+      <p>Emails go out in batches about a minute apart, and you can close the page. The conference account gets a summary email at the end. <b>Stop sending</b> pauses; starting the same campaign name again resumes and never emails anyone twice. Keep the Gmail draft until the summary arrives. Google allows about 1,500 emails a day; a larger mailing finishes the next day by itself.</p>
+    </details>
+
+    <details id="g-log"><summary>5 · Check the send log</summary>
+      <p>On <b>Send log</b>, filter by campaign, result or email to see who got a mailing and when. The totals show sent and failed counts per campaign. <b>Reload log</b> fetches the latest entries.</p>
+    </details>
+
+    <details id="g-import"><summary>6 · Import a list someone shared</summary>
+      <ol>
+        <li>On <b>Import a list</b>, choose the CSV or Excel file and type where it came from in <b>Source of this list</b> (e.g. <code>CCAP members 2027</code>). That name is also added as a tag.</li>
+        <li>Check the column matches. Outlook and Access headings are recognized; change any drop-down that is wrong.</li>
+        <li>Click <b>Check against the contact list</b> and review the groups: <b>New contacts</b> (added as Active), <b>Already in the list</b> (only blank fields are filled), <b>Possible duplicates</b> (same name, different email: choose Skip, Same person or Different person) and <b>Skipped</b> (no or invalid email, old Clarion addresses).</li>
+        <li>Click <b>Import</b>. Existing contacts never change status.</li>
+      </ol>
+    </details>
+
+    <details id="g-habits"><summary>7 · Habits &amp; quick fixes</summary>
+      <ul>
+        <li>Run <b>Process unsubscribes &amp; bounces</b> before every mailing, and always send yourself a test first.</li>
+        <li>Use a new campaign name for a mailing everyone should get again; reuse a name only to reach people added since.</li>
+        <li>Don't delete or send the Gmail draft while a campaign is running.</li>
+        <li>Don't add old @eagle.clarion.edu or @clarion.edu addresses; they no longer work.</li>
+      </ul>
+      <table><thead><tr><th>Problem</th><th>What to do</th></tr></thead><tbody>
+        <tr><td>"Wrong key" or nothing loads</td><td>Re-type the access key exactly, with no spaces at the ends.</td></tr>
+        <tr><td>My draft isn't in the list</td><td>It must be in the conference Gmail account's Drafts. Click ↻ next to the list.</td></tr>
+        <tr><td>Recipient count is 0</td><td>Check the ticked lists; only Active contacts are counted.</td></tr>
+        <tr><td>A mailing seems stuck</td><td>Click <b>Refresh status</b>. If today's quota is used up, it continues the next day.</td></tr>
+        <tr><td>Someone asks to be removed</td><td>Open them on Contacts and set Status to <b>Unsubscribed</b>.</td></tr>
+        <tr><td>The page stopped working after a code update</td><td>Ask the maintainer to redeploy the script as a <i>new version</i>.</td></tr></tbody></table>
+    </details>
+
+    <details id="g-maint"><summary>8 · For the maintainer</summary>
+      <p>The tool has four parts: <code>Code.gs</code> (sending engine), <code>Api.gs</code> (web API that checks the key) and <code>Sidebar.html</code> (in-sheet panel) live in the sheet's Apps Script project; this page is <code>conference-mailer.html</code>. After any script change: <b>Deploy → Manage deployments → Edit → Version: New version → Deploy</b>, which keeps the same address. To change the key: sheet menu <b>Conference Mailer → Set web page access key…</b>. Full setup steps, the column reference and the code are in the full user guide (claude.ai doc "Conference Mailer – Committee User Guide", and the Word/PDF copy in the GISDay\ConferenceManagement\ConferenceMailer folder).</p>
+    </details>
+  </div>
+</div>
+
+<!-- ================= CONTACT EDITOR ================= -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle">Contact</h3>
+    <div class="sgrid" id="mFields"></div>
+    <details id="mMore"><summary>Roles, history and other columns</summary><div class="ro" id="mRO"></div></details>
+    <div class="row" style="margin-top:16px">
+      <button type="button" class="btn primary" id="mSave">Save</button>
+      <button type="button" class="btn" id="mCancel">Cancel</button>
+      <button type="button" class="btn danger" id="mDelete" style="margin-left:auto">Delete contact</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ======================= configuration ======================= */
+// Optional: set a default web app URL here, or pass ?api=<url> in the page address
+// (handy when embedding in Experience Builder / ArcGIS Hub). The access key is never put in the URL.
+const DEFAULT_API = "https://script.google.com/macros/s/AKfycbzl2YKg0AGj49G8fwzG4IyomihiK_xInFU_zvNbfcf1PDspdQL7vRFCyNWWPOwOKGW-gw/exec";
+const EDIT_FIELDS = ["FirstName", "LastName", "Affiliation", "Email", "OtherEmails", "Phone", "Address1", "Address2",
+  "City", "State", "Zip", "Lists", "Status", "Notes"];
+const LIST_COLS = [["Name", r => fullName(r)], ["Affiliation", r => val(r, "Affiliation")], ["Email", r => val(r, "Email")],
+  ["Lists", null], ["Status", null], ["Last year", r => val(r, "LastYear")], ["Last sent", r => val(r, "LastSent")]];
+const ROLE_COLS = ["Presenter", "CoPresenter", "Keynote", "GeneralAttendee", "Committee", "Exhibitor", "Sponsor",
+  "WorkshopAttendee", "Student", "VendorProspect"];
+const PAGE = 300;
+/* ============================================================= */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = s => String(s ?? "").toLowerCase().trim();
+const store = {
+  get(k, session) { try { return (session ? sessionStorage : localStorage).getItem(k); } catch (e) { return null; } },
+  set(k, v, session) { try { (session ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) {} }
+};
+const K_URL = "wpagis-mailer-url", K_KEY = "wpagis-mailer-key";
+
+let API = new URLSearchParams(location.search).get("api") || store.get(K_URL) || DEFAULT_API;
+let KEY = store.get(K_KEY) || store.get(K_KEY, true) || "";
+let D = { headers: [], rows: [], lists: [], drafts: [], settings: {}, log: [], status: { running: false }, quota: null, sheetUrl: "" };
+let IX = {};                 // header -> index
+let SEL = new Map();         // _row -> email
+let SHOWN = PAGE, SORT = { k: "Name", dir: 1 }, EDIT = null, POLL = null, ARMED = false;
+
+/* ---------------- API ---------------- */
+async function api(action, params = {}) {
+  if (!API) throw new Error("Add the web app URL under Connection first.");
+  if (!KEY) throw new Error("Enter the access key under Connection first.");
+  const res = await fetch(API, { method: "POST", body: JSON.stringify(Object.assign({ key: KEY, action }, params)) });
+  let j;
+  try { j = await res.json(); } catch (e) { throw new Error("The web app didn't answer with data. Check the URL and that the deployment's access is set to Anyone."); }
+  if (!j.ok) { if (j.auth === false) $("connPanel").classList.add("open"); throw new Error(j.error || "Request failed"); }
+  return j;
+}
+function say(text, kind = "info") { const m = $("msg"); m.className = "msg show " + kind; m.textContent = text; if (kind === "ok") setTimeout(() => { if (m.textContent === text) m.className = "msg"; }, 6000); }
+function hush() { $("msg").className = "msg"; }
+function busy(text) { $("status").textContent = text; }
+async function run(btn, label, fn) {
+  const old = btn ? btn.textContent : ""; if (btn) { btn.disabled = true; btn.textContent = label; }
+  try { return await fn(); } catch (e) { say(e.message, "err"); } finally { if (btn) { btn.disabled = false; btn.textContent = old; } }
+}
+
+/* ---------------- loading ---------------- */
+async function loadAll() {
+  busy("Loading…"); hush();
+  try {
+    const j = await api("init");
+    D = Object.assign(D, j);
+    indexHeaders();
+    buildFilters(); renderContacts(); renderLists(); renderDrafts(); renderSettings(); renderLog(); renderStatus(j.status, j.quota);
+    $("aboutLine").innerHTML = `Connected to <b>${esc(j.account)}</b> · API v${esc(j.version)} · <a href="${esc(j.sheetUrl)}" target="_blank" rel="noopener">open the Google Sheet</a>`;
+    busy(`${D.rows.length} contacts · loaded ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
+    $("connPanel").classList.remove("open");
+    updateCount();
+  } catch (e) { busy("Not connected."); say(e.message, "err"); }
+}
+function indexHeaders() { IX = {}; D.headers.forEach((h, i) => IX[h.toLowerCase()] = i); }
+const val = (r, h) => { const i = IX[h.toLowerCase()]; return i === undefined ? "" : (r.v[i] ?? ""); };
+const has = h => IX[h.toLowerCase()] !== undefined;
+const fullName = r => `${val(r, "FirstName")} ${val(r, "LastName")}`.trim();
+const tags = r => String(val(r, "Lists")).split(/[,;]/).map(s => s.trim()).filter(Boolean);
+const statusOf = r => String(val(r, "Status")).trim() || "Active";
+
+/* ---------------- contacts ---------------- */
+function buildFilters() {
+  const keepL = $("fList").value, keepR = $("fRole").value, keepY = $("fYear").value;
+  const all = new Map();
+  D.rows.forEach(r => tags(r).forEach(t => all.set(t, (all.get(t) || 0) + 1)));
+  $("fList").innerHTML = `<option value="">Any</option>` + [...all.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([t, n]) => `<option value="${esc(t)}">${esc(t)} (${n})</option>`).join("");
+  $("fList").value = keepL;
+  const roles = ROLE_COLS.filter(has);
+  $("lRole").style.display = roles.length ? "" : "none";
+  $("fRole").innerHTML = `<option value="">Any</option>` + roles.map(r => `<option>${esc(r)}</option>`).join("");
+  $("fRole").value = keepR;
+  const years = [...new Set(D.rows.map(r => val(r, "LastYear")).filter(Boolean).map(Number))].sort((a, b) => b - a);
+  $("lYear").style.display = years.length ? "" : "none";
+  $("fYear").innerHTML = `<option value="">Any year</option>` + years.map(y => `<option value="${y}">${y} or later</option>`).join("");
+  $("fYear").value = keepY;
+}
+function filtered() {
+  const q = norm($("fQ").value), st = $("fStatus").value, lt = norm($("fList").value), role = $("fRole").value, yr = Number($("fYear").value || 0);
+  let list = D.rows.filter(r => {
+    if (st && statusOf(r) !== st) return false;
+    if (lt && !tags(r).some(t => norm(t) === lt)) return false;
+    if (role && norm(val(r, role)) !== "yes") return false;
+    if (yr && !(Number(val(r, "LastYear")) >= yr)) return false;
+    if (q && !norm(fullName(r) + " " + val(r, "Email") + " " + val(r, "Affiliation") + " " + val(r, "OtherEmails")).includes(q)) return false;
+    return true;
+  });
+  const col = LIST_COLS.find(c => c[0] === SORT.k);
+  const key = SORT.k === "Lists" ? r => tags(r).join(",") : SORT.k === "Status" ? statusOf : col && col[1] ? col[1] : fullName;
+  const sk = SORT.k === "Name" ? r => norm(val(r, "LastName") + " " + val(r, "FirstName")) : r => norm(key(r));
+  return list.sort((a, b) => { const x = sk(a), y = sk(b); return (x < y ? -1 : x > y ? 1 : 0) * SORT.dir; });
+}
+function chipsFor(r) { return tags(r).map(t => `<span class="chip${norm(t) === "test" ? " test" : ""}">${esc(t)}</span>`).join(""); }
+function renderContacts() {
+  $("cHead").innerHTML = `<th class="cb"><input type="checkbox" id="cAll" title="Select all shown"></th>` +
+    LIST_COLS.map(c => `<th data-k="${esc(c[0])}">${esc(c[0])}${SORT.k === c[0] ? (SORT.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("");
+  const list = filtered();
+  $("tcContacts").textContent = D.rows.length;
+  $("cCount").textContent = `${list.length} shown of ${D.rows.length}`;
+  if (!list.length) { $("cBody").innerHTML = `<tr><td colspan="${LIST_COLS.length + 1}" class="empty">${D.rows.length ? "No contacts match these filters." : "No contacts yet."}</td></tr>`; return; }
+  const part = list.slice(0, SHOWN);
+  $("cBody").innerHTML = part.map(r => `<tr data-row="${r._row}">
+    <td class="cb"><input type="checkbox" data-sel="${r._row}" ${SEL.has(r._row) ? "checked" : ""}></td>
+    <td><b>${esc(fullName(r)) || "<span class='note'>(no name)</span>"}</b></td><td>${esc(val(r, "Affiliation"))}</td><td>${esc(val(r, "Email"))}</td>
+    <td>${chipsFor(r)}</td><td><span class="chip st-${esc(statusOf(r))}">${esc(statusOf(r))}</span></td>
+    <td>${esc(val(r, "LastYear"))}</td><td>${esc(String(val(r, "LastSent")).slice(0, 10))}</td></tr>`).join("") +
+    (list.length > SHOWN ? `<tr><td colspan="${LIST_COLS.length + 1}" class="more"><button type="button" class="btn" id="cMore">Show ${Math.min(PAGE, list.length - SHOWN)} more (${list.length - SHOWN} hidden)</button></td></tr>` : "");
+  $("cAll").checked = part.length > 0 && part.every(r => SEL.has(r._row));
+  updateBulk();
+}
+function updateBulk() { $("bulk").classList.toggle("show", SEL.size > 0); $("bulkN").textContent = `${SEL.size} selected`; }
+
+$("cHead").addEventListener("click", e => {
+  const th = e.target.closest("th[data-k]");
+  if (th) { const k = th.dataset.k; SORT = { k, dir: SORT.k === k ? -SORT.dir : 1 }; renderContacts(); }
+});
+$("cHead").addEventListener("change", e => {
+  if (e.target.id !== "cAll") return;
+  filtered().slice(0, SHOWN).forEach(r => e.target.checked ? SEL.set(r._row, val(r, "Email")) : SEL.delete(r._row));
+  renderContacts();
+});
+$("cBody").addEventListener("click", e => {
+  if (e.target.id === "cMore") { SHOWN += PAGE; renderContacts(); return; }
+  const cb = e.target.closest("input[data-sel]");
+  if (cb) { const rr = Number(cb.dataset.sel), r = D.rows.find(x => x._row === rr); cb.checked ? SEL.set(rr, val(r, "Email")) : SEL.delete(rr); updateBulk(); return; }
+  if (e.target.closest("td.cb")) return;
+  const tr = e.target.closest("tr[data-row]");
+  if (tr) openEditor(D.rows.find(x => x._row === Number(tr.dataset.row)));
+});
+["fQ", "fStatus", "fList", "fRole", "fYear"].forEach(id => $(id).addEventListener(id === "fQ" ? "input" : "change", () => { SHOWN = PAGE; renderContacts(); }));
+$("fClear").onclick = () => { ["fQ", "fStatus", "fList", "fRole", "fYear"].forEach(id => $(id).value = ""); SHOWN = PAGE; renderContacts(); };
+$("bulkClear").onclick = () => { SEL.clear(); renderContacts(); };
+
+async function bulk(params, btn, label) {
+  const items = [...SEL.entries()].map(([row, email]) => ({ row, email }));
+  if (!items.length) return;
+  await run(btn, label, async () => {
+    const j = await api("bulkUpdate", Object.assign({ items }, params));
+    D.headers = j.headers; D.rows = j.rows; indexHeaders(); SEL.clear();
+    buildFilters(); renderContacts(); refreshLists();
+    say(`${j.changed} contact${j.changed === 1 ? "" : "s"} updated.`, "ok");
+  });
+}
+$("bulkStatus").onchange = e => { const s = e.target.value; e.target.value = ""; if (s) bulk({ status: s }, null, ""); };
+$("bulkAddTag").onclick = e => { const t = $("bulkTag").value.trim(); if (t) bulk({ addList: t }, e.target, "Adding…"); };
+$("bulkRemTag").onclick = e => { const t = $("bulkTag").value.trim(); if (t) bulk({ removeList: t }, e.target, "Removing…"); };
+
+$("bExport").onclick = () => {
+  const list = filtered();
+  const cell = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const csv = [D.headers.map(cell).join(",")].concat(list.map(r => r.v.map(cell).join(","))).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([String.fromCharCode(0xFEFF) + csv], { type: "text/csv" }));
+  a.download = `conference-contacts-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+};
+
+/* ---------------- editor ---------------- */
+function openEditor(r) {
+  EDIT = r || null;
+  $("mTitle").textContent = r ? (fullName(r) || val(r, "Email")) : "Add a contact";
+  const fields = EDIT_FIELDS.filter(h => has(h) || !r);
+  $("mFields").innerHTML = fields.map(h => {
+    const v = r ? val(r, h) : (h === "Status" ? "Active" : "");
+    const wide = ["Lists", "Notes", "OtherEmails", "Affiliation"].includes(h) ? " wide" : "";
+    if (h === "Status") return `<label class="f">Status<select data-f="Status">${["Active", "Unsubscribed", "Bounced", "Invalid"].map(s => `<option${s === (v || "Active") ? " selected" : ""}>${s}</option>`).join("")}</select></label>`;
+    if (h === "Notes") return `<label class="f wide">Notes<textarea data-f="Notes">${esc(v)}</textarea></label>`;
+    return `<label class="f${wide}">${esc(h.replace(/([a-z])([A-Z])/g, "$1 $2"))}${h === "Lists" ? ' <span class="note">(comma-separated tags)</span>' : ""}<input type="${h === "Email" ? "email" : "text"}" data-f="${esc(h)}" value="${esc(v)}"></label>`;
+  }).join("");
+  const others = r ? D.headers.filter(h => h && !EDIT_FIELDS.includes(h)) : [];
+  $("mMore").style.display = others.length ? "" : "none";
+  $("mRO").innerHTML = others.map(h => `<div><b>${esc(h)}</b>${esc(val(r, h)) || "—"}</div>`).join("");
+  $("mDelete").style.display = r ? "" : "none";
+  $("modalBg").classList.add("show");
+  const first = $("mFields").querySelector("input"); if (first) first.focus();
+}
+function closeEditor() { $("modalBg").classList.remove("show"); EDIT = null; }
+$("mCancel").onclick = closeEditor;
+$("modalBg").addEventListener("click", e => { if (e.target.id === "modalBg") closeEditor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("modalBg").classList.contains("show")) closeEditor(); });
+$("bAdd").onclick = () => openEditor(null);
+
+$("mSave").onclick = e => run(e.target, "Saving…", async () => {
+  const values = {};
+  $("mFields").querySelectorAll("[data-f]").forEach(el => values[el.dataset.f] = el.value.trim());
+  if (!values.Email) throw new Error("An email address is required.");
+  if (EDIT) {
+    const changed = {};
+    Object.keys(values).forEach(k => { if (String(val(EDIT, k)) !== values[k]) changed[k] = values[k]; });
+    if (!Object.keys(changed).length) { closeEditor(); return; }
+    const j = await api("saveContact", { row: EDIT._row, email: val(EDIT, "Email"), values: changed });
+    const i = D.rows.findIndex(x => x._row === EDIT._row);
+    if (i >= 0) D.rows[i] = j.row; else D.rows.push(j.row);
+    say("Contact saved.", "ok");
+  } else {
+    const j = await api("addContact", { values });
+    D.rows.push(j.row);
+    say("Contact added.", "ok");
+  }
+  closeEditor(); buildFilters(); renderContacts(); refreshLists();
+});
+$("mDelete").onclick = e => {
+  if (!EDIT) return;
+  const b = e.target;
+  if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Click again to delete"; b.classList.add("confirm"); setTimeout(() => { b.dataset.armed = ""; b.textContent = "Delete contact"; b.classList.remove("confirm"); }, 4000); return; }
+  b.dataset.armed = ""; b.classList.remove("confirm");
+  run(b, "Deleting…", async () => {
+    const j = await api("deleteContact", { row: EDIT._row, email: val(EDIT, "Email") });
+    D.headers = j.headers; D.rows = j.rows; indexHeaders(); SEL.clear();
+    closeEditor(); buildFilters(); renderContacts(); refreshLists();
+    say("Contact deleted.", "ok");
+  });
+};
+
+/* ---------------- compose & send ---------------- */
+function renderDrafts() {
+  const keep = $("sDraft").value;
+  $("sDraft").innerHTML = D.drafts.length ? D.drafts.map(d => `<option value="${esc(d.id)}">${esc(d.subject)}</option>`).join("")
+    : `<option value="">No Gmail drafts found in the conference account</option>`;
+  if (keep && D.drafts.some(d => d.id === keep)) $("sDraft").value = keep;
+}
+function renderLists() {
+  const keep = new Set([...document.querySelectorAll("#sLists input:checked")].map(i => i.value));
+  $("sLists").innerHTML = D.lists.length ? D.lists.map(l => `<label><input type="checkbox" value="${esc(l.name)}"${keep.has(l.name) ? " checked" : ""}>
+    <span class="chip${norm(l.name) === "test" ? " test" : ""}">${esc(l.name)}</span><span class="note">${l.count}</span></label>`).join("") : `<span class="note">No lists yet. Add tags in the Lists column.</span>`;
+}
+async function refreshLists() { try { const j = await api("lists"); D.lists = j.lists; renderLists(); updateCount(); } catch (e) {} }
+function chosenLists() { return $("sAll").checked ? [] : [...document.querySelectorAll("#sLists input:checked")].map(i => i.value); }
+let countTimer = null;
+function updateCount() {
+  disarm();
+  clearTimeout(countTimer);
+  if (!API || !KEY) return;
+  const lists = chosenLists();
+  if (!$("sAll").checked && !lists.length) { $("kRecip").textContent = "0"; return; }
+  $("kRecip").textContent = "…";
+  countTimer = setTimeout(async () => { try { $("kRecip").textContent = (await api("count", { lists })).count; } catch (e) { $("kRecip").textContent = "?"; } }, 250);
+}
+$("sAll").onchange = () => { if ($("sAll").checked) document.querySelectorAll("#sLists input").forEach(i => i.checked = false); updateCount(); };
+$("sLists").addEventListener("change", e => { if (e.target.checked) $("sAll").checked = false; updateCount(); });
+$("sDraft").onchange = disarm;
+$("sDraftsReload").onclick = e => run(e.target, "…", async () => { D.drafts = (await api("drafts")).drafts; renderDrafts(); });
+
+function disarm() { ARMED = false; $("sStart").textContent = "Start sending"; $("sStart").classList.remove("confirm"); }
+$("sTest").onclick = e => run(e.target, "Sending test…", async () => {
+  if (!$("sDraft").value) throw new Error("Pick a draft first.");
+  say((await api("test", { draftId: $("sDraft").value, lists: chosenLists() })).message, "ok");
+});
+$("sStart").onclick = e => {
+  if (!$("sDraft").value) { say("Pick a draft first.", "err"); return; }
+  const n = $("kRecip").textContent;
+  if (n === "0") { say("No recipients selected.", "err"); return; }
+  if (!ARMED) { ARMED = true; e.target.textContent = `Click again to send to ${n}`; e.target.classList.add("confirm"); say("Check the draft, the recipients and your test email, then click again to confirm.", "info"); return; }
+  disarm();
+  say("Sending the first batch… this can take a few minutes. Keep this page open until it reports back; after that, sending continues on its own.", "info");
+  run(e.target, "Sending…", async () => {
+    const j = await api("start", { draftId: $("sDraft").value, lists: chosenLists(), name: $("sName").value });
+    say(j.message, "ok"); renderStatus(j.status); loadLog();
+  });
+};
+$("sStop").onclick = e => run(e.target, "Stopping…", async () => { const j = await api("stop"); say(j.message, "ok"); renderStatus(j.status); });
+$("sRefresh").onclick = e => run(e.target, "…", pollStatus);
+async function pollStatus() { const j = await api("status"); renderStatus(j.status, j.quota); }
+function renderStatus(s, quota) {
+  if (quota !== undefined && quota !== null) { D.quota = quota; $("kQuota").textContent = quota; }
+  clearInterval(POLL); POLL = null;
+  if (!s || !s.running) { $("sStatus").innerHTML = "Nothing sending right now."; $("sStop").style.display = "none"; return; }
+  const done = (s.sent || 0) + (s.failed || 0), pct = s.total ? Math.min(100, Math.round(100 * done / s.total)) : 0;
+  const next = s.next ? new Date(s.next).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+  $("sStatus").innerHTML = `<b style="color:var(--navy)">${esc(s.name)}</b><br>Sent ${s.sent} · Failed ${s.failed} · of about ${s.total}
+    <div class="progress"><div style="width:${pct}%"></div></div>${next ? `Next batch around ${esc(next)}. You can close this page; sending continues.` : ""}${s.note ? `<br>${esc(s.note)}` : ""}`;
+  $("sStop").style.display = "";
+  POLL = setInterval(() => pollStatus().catch(() => {}), 30000);
+}
+
+/* ---------------- log ---------------- */
+async function loadLog() { try { D.log = (await api("log")).log; renderLog(); } catch (e) { say(e.message, "err"); } }
+function renderLog() {
+  const camps = [...new Set(D.log.map(l => l.campaign))];
+  const keep = $("lCamp").value;
+  $("lCamp").innerHTML = `<option value="">All campaigns</option>` + camps.map(c => `<option>${esc(c)}</option>`).join("");
+  $("lCamp").value = camps.includes(keep) ? keep : "";
+  const c = $("lCamp").value, r = $("lRes").value, q = norm($("lQ").value);
+  const list = D.log.filter(l => (!c || l.campaign === c) && (!r || l.result === r) && (!q || norm(l.email).includes(q))).reverse();
+  $("tcLog").textContent = D.log.length;
+  $("lCount").textContent = `${list.length} shown of ${D.log.length}`;
+  const by = {};
+  D.log.filter(l => !c || l.campaign === c).forEach(l => { by[l.campaign] = by[l.campaign] || { Sent: 0, Failed: 0 }; by[l.campaign][l.result] = (by[l.campaign][l.result] || 0) + 1; });
+  $("lKpis").innerHTML = Object.entries(by).slice(-4).map(([k, v]) => `<div class="kpi"><b>${v.Sent}</b><span>sent${v.Failed ? ` · ${v.Failed} failed` : ""} — ${esc(k)}</span></div>`).join("");
+  $("lBody").innerHTML = list.length ? list.slice(0, 1000).map(l => `<tr style="cursor:default"><td>${esc(l.time)}</td><td>${esc(l.campaign)}</td><td>${esc(l.email)}</td>
+    <td><span class="chip st-${esc(l.result)}">${esc(l.result)}</span></td><td>${esc(l.detail)}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="empty">Nothing sent yet.</td></tr>`;
+}
+["lCamp", "lRes"].forEach(id => $(id).onchange = renderLog);
+$("lQ").oninput = renderLog;
+$("lReload").onclick = e => run(e.target, "Loading…", loadLog);
+
+/* ---------------- settings & tools ---------------- */
+function renderSettings() {
+  const s = D.settings || {};
+  ["SenderName", "ReplyTo", "BatchSize", "PauseMs", "Footer"].forEach(k => { const el = $("set" + k); if (el) el.value = s[k] ?? ""; });
+}
+$("setSave").onclick = e => run(e.target, "Saving…", async () => {
+  const settings = {};
+  ["SenderName", "ReplyTo", "BatchSize", "PauseMs", "Footer"].forEach(k => settings[k] = $("set" + k).value);
+  D.settings = (await api("saveSettings", { settings })).settings; renderSettings();
+  say("Settings saved.", "ok");
+});
+$("tReplies").onclick = e => run(e.target, "Checking the inbox…", async () => { say((await api("processReplies")).message, "ok"); await loadAll(); });
+$("tClean").onclick = e => {
+  const b = e.target;
+  if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Click again to clean the list"; b.classList.add("confirm"); setTimeout(() => { b.dataset.armed = ""; b.textContent = "Clean & de-duplicate contacts"; b.classList.remove("confirm"); }, 4000); return; }
+  b.dataset.armed = ""; b.classList.remove("confirm");
+  run(b, "Cleaning…", async () => { say((await api("clean")).message, "ok"); await loadAll(); });
+};
+
+/* ---------------- import ---------------- */
+const TARGETS = [
+  ["FullName", "Full name (split into first/last)", ["full name", "name", "contact name", "attendee name", "display name"]],
+  ["FirstName", "First name", ["first name", "firstname", "first", "given name", "fname"]],
+  ["LastName", "Last name", ["last name", "lastname", "last", "surname", "family name", "lname"]],
+  ["Email", "Email", ["email", "e-mail address", "email address", "e-mail", "email 1", "primary email", "work email"]],
+  ["Email2", "Second email (kept in OtherEmails)", ["e-mail 2 address", "email 2", "secondary email", "alternate email", "other email", "personal email"]],
+  ["Affiliation", "Affiliation / company", ["company", "affiliation", "organization", "organisation", "company/organization", "employer", "agency", "institution"]],
+  ["Phone", "Phone", ["business phone", "phone", "phone number", "work phone", "mobile phone", "telephone", "cell phone", "primary phone"]],
+  ["Address1", "Address line 1", ["business street", "address", "address 1", "address line 1", "street", "street address", "mailing address"]],
+  ["Address2", "Address line 2", ["business street 2", "address 2", "address line 2", "suite"]],
+  ["City", "City", ["business city", "city", "town"]],
+  ["State", "State", ["business state", "state", "state/province", "province"]],
+  ["Zip", "Zip", ["business postal code", "zip", "zip code", "postal code", "zipcode", "postcode"]],
+  ["Country", "Country", ["business country/region", "country", "country/region"]],
+  ["Lists", "Existing tags / categories", ["categories", "lists", "tags", "groups"]],
+  ["Notes", "Notes", ["notes", "comments", "note"]]
+];
+const NICK = { joe: "joseph", joey: "joseph", mike: "michael", matt: "matthew", alex: "alexander", dave: "david", tom: "thomas", chris: "christopher",
+  bill: "william", will: "william", rob: "robert", bob: "robert", steve: "steven", jim: "james", dan: "daniel", ben: "benjamin", nick: "nicholas",
+  josh: "joshua", sam: "samuel", kate: "katherine", katie: "katherine", jess: "jessica", jake: "jacob", tim: "timothy", greg: "gregory",
+  andy: "andrew", drew: "andrew", tony: "anthony", liz: "elizabeth", beth: "elizabeth", pat: "patrick", rick: "richard", rich: "richard",
+  jen: "jennifer", jenn: "jennifer", phil: "phillip", zach: "zachary", nate: "nathan", jeff: "jeffrey", doug: "douglas", ed: "edward", ken: "kenneth" };
+const nameKey = (f, l) => { const a = norm(f).replace(/[^a-z]/g, ""), b = norm(l).replace(/\b(jr|sr|ii|iii)\b/g, "").replace(/[^a-z]/g, ""); return a && b ? (NICK[a] || a) + "|" + b : ""; };
+const EMAIL_OK = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$/;
+const DEAD = /@(eagle\.clarion\.edu|clarion\.eagle\.edu|eagle\.calrion\.edu)$/i;
+let IMP = { wb: null, rows: [], cols: [], map: {}, notes: new Set(), items: [], tab: "new" };
+
+$("iFile").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  if (!window.XLSX) { say("The spreadsheet reader didn't load. Check the internet connection and reload the page.", "err"); return; }
+  try {
+    const buf = await f.arrayBuffer();
+    IMP.wb = XLSX.read(buf, { type: "array", cellDates: true });
+    $("iSheet").innerHTML = IMP.wb.SheetNames.map(n => `<option>${esc(n)}</option>`).join("");
+    $("iSheetL").style.display = IMP.wb.SheetNames.length > 1 ? "" : "none";
+    if (!$("iSource").value) $("iSource").value = f.name.replace(/\.(csv|xlsx|xls|txt)$/i, "").replace(/[_-]+/g, " ");
+    readSheet();
+  } catch (err) { say("Couldn't read that file: " + err.message, "err"); }
+};
+$("iSheet").onchange = readSheet;
+function readSheet() {
+  const ws = IMP.wb.Sheets[$("iSheet").value || IMP.wb.SheetNames[0]];
+  const grid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, blankrows: false });
+  const hi = grid.findIndex(r => r.filter(c => String(c).trim()).length >= 2);
+  if (hi < 0) { say("That sheet looks empty.", "err"); return; }
+  IMP.cols = grid[hi].map((c, i) => String(c).trim() || `Column ${i + 1}`);
+  IMP.rows = grid.slice(hi + 1).filter(r => r.some(c => String(c).trim()));
+  IMP.map = {};
+  const used = new Set();
+  TARGETS.forEach(([k, , cands]) => {
+    let i = -1;
+    for (const c of cands) { i = IMP.cols.findIndex((h, j) => !used.has(j) && norm(h) === c); if (i >= 0) break; }
+    if (i < 0 && k !== "FullName") for (const c of cands) { i = IMP.cols.findIndex((h, j) => !used.has(j) && norm(h).includes(c)); if (i >= 0) break; }
+    if (i >= 0) { IMP.map[k] = i; used.add(i); }
+  });
+  if (IMP.map.FirstName !== undefined && IMP.map.FullName !== undefined) { used.delete(IMP.map.FullName); delete IMP.map.FullName; }
+  IMP.notes = new Set();
+  $("iFileNote").textContent = `${IMP.rows.length} rows and ${IMP.cols.length} columns found. Nothing is written until you press Import in step 4.`;
+  renderMap(); $("iMapCard").style.display = ""; $("iPrevCard").style.display = "none"; step(2);
+}
+function step(n) { [...$("iSteps").children].forEach((s, i) => s.classList.toggle("on", i < n)); }
+function sample(i) { const v = IMP.rows.map(r => String(r[i] ?? "").trim()).filter(Boolean).slice(0, 2); return v.length ? "e.g. " + v.join(" · ") : "(empty)"; }
+function renderMap() {
+  $("iMap").innerHTML = TARGETS.map(([k, label]) => {
+    const cur = IMP.map[k];
+    return `<label>${esc(label)}<select data-t="${k}"><option value="">(not in this file)</option>${IMP.cols.map((c, i) => `<option value="${i}"${cur === i ? " selected" : ""}>${esc(c)}</option>`).join("")}</select>
+      <span class="ex">${cur !== undefined ? esc(sample(cur)) : ""}</span></label>`;
+  }).join("");
+  const mapped = new Set(Object.values(IMP.map));
+  const rest = IMP.cols.map((c, i) => [c, i]).filter(([, i]) => !mapped.has(i) && IMP.rows.some(r => String(r[i] ?? "").trim()));
+  $("iNoteCols").innerHTML = rest.length ? rest.map(([c, i]) => `<label title="${esc(sample(i))}"><input type="checkbox" value="${i}"${IMP.notes.has(i) ? " checked" : ""}>${esc(c)}</label>`).join("")
+    : `<span class="note">Every column with data is matched.</span>`;
+}
+$("iMap").addEventListener("change", e => {
+  const t = e.target.dataset.t; if (!t) return;
+  if (e.target.value === "") delete IMP.map[t]; else IMP.map[t] = Number(e.target.value);
+  renderMap(); $("iPrevCard").style.display = "none"; step(2);
+});
+$("iNoteCols").addEventListener("change", e => { const i = Number(e.target.value); e.target.checked ? IMP.notes.add(i) : IMP.notes.delete(i); });
+
+function rowValues(r) {
+  const g = k => IMP.map[k] === undefined ? "" : String(r[IMP.map[k]] ?? "").trim();
+  let first = g("FirstName"), last = g("LastName");
+  if ((!first || !last) && g("FullName")) {
+    const full = g("FullName");
+    if (full.includes(",")) { const [a, b] = full.split(",", 2); last = last || a.trim(); first = first || b.trim().split(/\s+/)[0]; }
+    else { const p = full.split(/\s+/); first = first || p[0]; last = last || (p.length > 1 ? p.slice(1).join(" ") : ""); }
+  }
+  const emails = (g("Email") + " " + g("Email2")).match(/[^\s<>,;"']+@[^\s<>,;"']+\.[a-z]{2,}/gi) || [];
+  const notes = [g("Notes")].concat([...IMP.notes].map(i => { const v = String(r[i] ?? "").trim(); return v ? `${IMP.cols[i]}: ${v}` : ""; })).filter(Boolean).join("; ");
+  return { RawEmail: g("Email"), FirstName: first, LastName: last, Email: (emails[0] || "").toLowerCase(), Email2: (emails[1] || "").toLowerCase(),
+    Affiliation: g("Affiliation"), Phone: g("Phone"), Address1: g("Address1"), Address2: g("Address2"), City: g("City"),
+    State: g("State"), Zip: g("Zip"), Country: g("Country"), Lists: g("Lists").replace(/;/g, ","), Notes: notes };
+}
+const FILLABLE = ["FirstName", "LastName", "Affiliation", "Phone", "Address1", "Address2", "City", "State", "Zip", "Country"];
+
+$("iCheck").onclick = () => {
+  if (!D.rows.length) { say("Connect first, so the list can be compared with your contacts.", "err"); return; }
+  if (IMP.map.Email === undefined) { say("Pick which column holds the email address.", "err"); return; }
+  const byEmail = new Map(), byName = new Map();
+  D.rows.forEach(r => {
+    [val(r, "Email")].concat(String(val(r, "OtherEmails")).split(/[,;\s]+/)).map(norm).filter(Boolean).forEach(e => { if (!byEmail.has(e)) byEmail.set(e, r); });
+    const k = nameKey(val(r, "FirstName"), val(r, "LastName")); if (k) (byName.get(k) || byName.set(k, []).get(k)).push(r);
+  });
+  const seen = new Map();
+  IMP.items = [];
+  IMP.rows.forEach((raw, idx) => {
+    const v = rowValues(raw);
+    const it = { idx, v, kind: "", reason: "", target: null, choice: "", fill: {} };
+    if (!v.Email) { it.kind = "skip"; it.reason = v.RawEmail ? `Email doesn't look valid ("${v.RawEmail}")` : "No email address"; }
+    else if (!EMAIL_OK.test(v.Email)) { it.kind = "skip"; it.reason = "Email doesn't look valid"; }
+    else if (DEAD.test(v.Email)) { it.kind = "skip"; it.reason = "Old Clarion student address (no longer works)"; }
+    else if (seen.has(v.Email)) { it.kind = "skip"; it.reason = `Repeated in this file (row ${seen.get(v.Email) + 2})`; }
+    else if (byEmail.has(v.Email) || (v.Email2 && byEmail.has(v.Email2))) {
+      it.kind = "existing"; it.target = byEmail.get(v.Email) || byEmail.get(v.Email2); it.choice = "update";
+    } else {
+      const cands = byName.get(nameKey(v.FirstName, v.LastName)) || [];
+      if (cands.length) { it.kind = "dup"; it.target = cands[0]; it.cands = cands; it.choice = "skip"; }
+      else { it.kind = "new"; it.choice = "add"; }
+    }
+    if (v.Email && !seen.has(v.Email)) seen.set(v.Email, idx);
+    if (it.target) FILLABLE.forEach(k => { if (v[k] && !String(val(it.target, k)).trim() && has(k)) it.fill[k] = v[k]; });
+    IMP.items.push(it);
+  });
+  IMP.tab = IMP.items.some(i => i.kind === "dup") ? "dup" : "new";
+  $("iPrevCard").style.display = ""; step(3); renderPreview();
+  $("iPrevCard").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+function renderPreview() {
+  const c = k => IMP.items.filter(i => i.kind === k).length;
+  const groups = [["new", "New contacts", c("new")], ["existing", "Already in the list", c("existing")], ["dup", "Possible duplicates", c("dup")], ["skip", "Skipped", c("skip")]];
+  $("iKpis").innerHTML = groups.map(([, l, n]) => `<div class="kpi"><b>${n}</b><span>${l}</span></div>`).join("");
+  $("iPtabs").innerHTML = groups.map(([k, l, n]) => `<button type="button" data-p="${k}" class="${IMP.tab === k ? "on" : ""}">${l} (${n})</button>`).join("");
+  const list = IMP.items.filter(i => i.kind === IMP.tab);
+  const nm = v => esc(`${v.FirstName} ${v.LastName}`.trim()) || "<span class='note'>(no name)</span>";
+  const tName = r => esc(fullName(r) || val(r, "Email"));
+  let head = "", body = "", bulk = "";
+  if (IMP.tab === "new") {
+    bulk = `<button type="button" class="btn" data-all="add">Add all</button><button type="button" class="btn" data-all="skip">Skip all</button>`;
+    head = `<tr><th class="cb">Add</th><th>Name</th><th>Email</th><th>Affiliation</th><th>Phone / city</th></tr>`;
+    body = list.map(i => `<tr style="cursor:default"><td class="cb"><input type="checkbox" data-i="${i.idx}" data-c="add"${i.choice === "add" ? " checked" : ""}></td>
+      <td>${nm(i.v)}</td><td>${esc(i.v.Email)}</td><td>${esc(i.v.Affiliation)}</td><td>${esc([i.v.Phone, i.v.City].filter(Boolean).join(" · "))}</td></tr>`).join("");
+  } else if (IMP.tab === "existing") {
+    bulk = `<button type="button" class="btn" data-all="update">Update all</button><button type="button" class="btn" data-all="skip">Leave all unchanged</button>`;
+    head = `<tr><th class="cb">Update</th><th>In the file</th><th>Matches contact</th><th>Will fill these empty fields</th></tr>`;
+    body = list.map(i => `<tr style="cursor:default"><td class="cb"><input type="checkbox" data-i="${i.idx}" data-c="update"${i.choice === "update" ? " checked" : ""}></td>
+      <td>${nm(i.v)}<br><span class="old">${esc(i.v.Email)}</span></td><td>${tName(i.target)}<br><span class="old">${esc(val(i.target, "Email"))} · ${esc(statusOf(i.target))}</span></td>
+      <td>${Object.keys(i.fill).length ? Object.entries(i.fill).map(([k, v]) => `<span class="fillchip">${esc(k)}: ${esc(v)}</span>`).join("") : "<span class='note'>nothing new — only the tag and source are added</span>"}</td></tr>`).join("");
+  } else if (IMP.tab === "dup") {
+    bulk = `<span class="note">Same name as an existing contact but a different email. Decide for each one:</span>`;
+    head = `<tr><th>In the file</th><th>Existing contact with the same name</th><th>What to do</th></tr>`;
+    body = list.map(i => `<tr style="cursor:default"><td>${nm(i.v)}<br><span class="old">${esc(i.v.Email)}${i.v.Affiliation ? " · " + esc(i.v.Affiliation) : ""}</span></td>
+      <td>${i.cands.map(r => `${tName(r)}<br><span class="old">${esc(val(r, "Email"))}${val(r, "Affiliation") ? " · " + esc(val(r, "Affiliation")) : ""} · last ${esc(val(r, "LastYear") || "—")}</span>`).join("<hr style='border:0;border-top:1px solid #eee'>")}</td>
+      <td><select data-i="${i.idx}">
+        <option value="skip"${i.choice === "skip" ? " selected" : ""}>Skip this row</option>
+        ${i.cands.map((r, n) => `<option value="merge:${n}"${i.choice === "merge:" + n ? " selected" : ""}>Same person — add this email to ${tName(r)}</option>`).join("")}
+        <option value="add"${i.choice === "add" ? " selected" : ""}>Different person — add as new contact</option></select></td></tr>`).join("");
+  } else {
+    head = `<tr><th>Row in file</th><th>Name</th><th>Email</th><th>Why skipped</th></tr>`;
+    body = list.map(i => `<tr style="cursor:default"><td>${i.idx + 2}</td><td>${nm(i.v)}</td><td>${esc(i.v.Email)}</td><td>${esc(i.reason)}</td></tr>`).join("");
+  }
+  $("iBulkRow").innerHTML = bulk;
+  $("iHead").innerHTML = head;
+  $("iBody").innerHTML = body || `<tr><td colspan="5" class="empty">Nothing in this group.</td></tr>`;
+  const adds = IMP.items.filter(i => i.choice === "add").length, ups = IMP.items.filter(i => i.choice === "update" || String(i.choice).startsWith("merge")).length;
+  $("iGoNote").textContent = `Will add ${adds} new contact${adds === 1 ? "" : "s"} and update ${ups} existing one${ups === 1 ? "" : "s"}.`;
+}
+$("iPtabs").addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (b) { IMP.tab = b.dataset.p; renderPreview(); } });
+$("iBulkRow").addEventListener("click", e => {
+  const a = e.target.dataset.all; if (!a) return;
+  IMP.items.filter(i => i.kind === IMP.tab).forEach(i => i.choice = a); renderPreview();
+});
+$("iBody").addEventListener("change", e => {
+  const it = IMP.items.find(i => i.idx === Number(e.target.dataset.i)); if (!it) return;
+  if (e.target.tagName === "SELECT") {
+    it.choice = e.target.value;
+    if (it.choice.startsWith("merge:")) { const r = it.cands[Number(it.choice.split(":")[1])]; it.target = r; it.fill = {}; FILLABLE.forEach(k => { if (it.v[k] && !String(val(r, k)).trim() && has(k)) it.fill[k] = it.v[k]; }); }
+  } else it.choice = e.target.checked ? e.target.dataset.c : "skip";
+  renderPreview();
+});
+$("iGo").onclick = e => run(e.target, "Importing…", async () => {
+  const source = $("iSource").value.trim(); if (!source) { $("iSource").focus(); throw new Error("Please name the source of this list (step 1)."); }
+  const tag = $("iTag").value.trim() || source;
+  const adds = IMP.items.filter(i => i.choice === "add").map(i => {
+    const o = { FirstName: i.v.FirstName, LastName: i.v.LastName, Email: i.v.Email, Affiliation: i.v.Affiliation, Phone: i.v.Phone,
+      Address1: i.v.Address1, Address2: i.v.Address2, City: i.v.City, State: i.v.State, Zip: i.v.Zip, Country: i.v.Country, Notes: i.v.Notes, Lists: i.v.Lists };
+    if (i.v.Email2) o.OtherEmails = i.v.Email2;
+    return o;
+  });
+  const updates = IMP.items.filter(i => i.choice === "update" || String(i.choice).startsWith("merge")).map(i => ({
+    row: i.target._row, email: val(i.target, "Email"), fill: i.fill,
+    addEmail: String(i.choice).startsWith("merge") ? i.v.Email : (i.v.Email2 || "") }));
+  if (!adds.length && !updates.length) throw new Error("Nothing is selected to import.");
+  const CH = 250, total = { added: 0, updated: 0, skipped: 0 };
+  const chunks = [];
+  for (let k = 0; k < Math.max(adds.length, updates.length); k += CH) chunks.push({ adds: adds.slice(k, k + CH), updates: updates.slice(k, k + CH) });
+  for (let c = 0; c < chunks.length; c++) {
+    e.target.textContent = `Importing… ${c + 1}/${chunks.length}`;
+    const j = await api("importContacts", Object.assign({ source, tag, final: c === chunks.length - 1 }, chunks[c]));
+    total.added += j.added; total.updated += j.updated; total.skipped += j.skipped;
+    if (j.headers) { D.headers = j.headers; D.rows = j.rows; indexHeaders(); }
+  }
+  step(4); buildFilters(); renderContacts(); refreshLists();
+  say(`Import finished from "${source}": ${total.added} added, ${total.updated} existing contacts updated${total.skipped ? `, ${total.skipped} skipped (already in the list)` : ""}. Filter the Contacts tab by the tag "${tag}" to see them.`, "ok");
+  $("iPrevCard").style.display = "none"; $("iMapCard").style.display = "none"; $("iFile").value = "";
+});
+
+/* ---------------- tabs, connection, start ---------------- */
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]"); if (!b) return;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + b.dataset.v));
+  hush();
+});
+$("bConn").onclick = () => $("connPanel").classList.toggle("open");
+/* guide */
+function openGuide(id) {
+  $("guideBg").classList.add("show");
+  if (id) { const d = $(id); d.open = true; setTimeout(() => d.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50); }
+}
+$("bGuide").onclick = () => openGuide(API && KEY ? "" : "g-connect");
+$("gClose").onclick = () => $("guideBg").classList.remove("show");
+$("guideBg").addEventListener("click", e => {
+  if (e.target.id === "guideBg") $("guideBg").classList.remove("show");
+  const a = e.target.closest("a[data-g]"); if (a) openGuide(a.dataset.g);
+});
+$("gExpand").onclick = () => {
+  const ds = [...document.querySelectorAll("#guideBg details")], open = ds.some(d => !d.open);
+  ds.forEach(d => d.open = open); $("gExpand").textContent = open ? "Close all" : "Open all";
+};
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("guideBg").classList.remove("show"); });
+$("bReload").onclick = loadAll;
+$("bSheet").onclick = () => { if (D.sheetUrl) window.open(D.sheetUrl, "_blank", "noopener"); else say("Connect first.", "err"); };
+$("cConnect").onclick = () => {
+  API = $("cUrl").value.trim() || DEFAULT_API; KEY = $("cKey").value;
+  if (API === DEFAULT_API) store.del(K_URL); else store.set(K_URL, API);
+  $("cUrl").value = API;
+  store.del(K_KEY);
+  if ($("cRemember").checked) store.set(K_KEY, KEY); else store.set(K_KEY, KEY, true);
+  loadAll();
+};
+$("cForget").onclick = () => { store.del(K_KEY); KEY = ""; $("cKey").value = ""; say("Saved key removed from this browser.", "ok"); };
+
+$("cUrlToggle").onclick = () => { const l = $("cUrlL"); l.style.display = l.style.display === "none" ? "" : "none"; if (l.style.display === "") $("cUrl").focus(); };
+$("cUrl").value = API; $("cKey").value = KEY; $("cRemember").checked = !!store.get(K_KEY);
+if (!API) $("cUrlL").style.display = "";
+if (API && KEY) loadAll(); else { $("connPanel").classList.add("open"); busy("Not connected."); }
+</script>
+</body>
+</html>
